@@ -16,28 +16,28 @@ By categorizing incoming queries before dispatching them to LLMs, RouteOps prote
 
 ```mermaid
 flowchart TD
-    User([User Query\nEnglish / Romanized Nepali / Devanagari]) --> Gateway[RouteOps Semantic Gateway\nFastAPI / REST API /v1/route]
+    User(["User Query<br/>English / Romanized Nepali / Devanagari"]) --> Gateway["RouteOps Semantic Gateway<br/>FastAPI / REST API /v1/route"]
     
-    Gateway --> Preproc[Tokenizer & Sanitizer\nmax_seq_length=128]
-    Preproc --> Classifier[Multilingual Classifier\nDistilBERT Multilingual / ONNX Int8]
+    Gateway --> Preproc["Tokenizer & Sanitizer<br/>max_seq_length=128"]
+    Preproc --> Classifier["Multilingual Classifier<br/>DistilBERT Multilingual / ONNX Int8"]
     
-    Classifier --> Confidence{Threshold & Confidence\nEvaluation}
+    Classifier --> Confidence{"Threshold & Confidence<br/>Evaluation"}
 
     %% Guardrail Block
-    Confidence -- "Guardrail Triggered (Prob >= 0.60)" --> Block[Guardrail Blocked\nHTTP 403 / Sanitized Refusal\nCost: $0.0000]
+    Confidence -- "Guardrail Triggered (Prob >= 0.60)" --> Block["Guardrail Blocked<br/>HTTP 403 / Sanitized Refusal<br/>Cost: $0.0000"]
     
     %% Direct Response
-    Confidence -- "Direct Intent (Prob >= 0.80)" --> Direct[Direct Response Tier\nDeterministic FAQ / Cache / Local SLM\nCost: $0.0001 / 1k tokens]
+    Confidence -- "Direct Intent (Prob >= 0.80)" --> Direct["Direct Response Tier<br/>Deterministic FAQ / Cache / Local SLM<br/>Cost: $0.0001 / 1k tokens"]
     
     %% RAG Retrieval
-    Confidence -- "Retrieval Intent (Prob >= 0.75)" --> RAG[RAG Retrieval Tier\nVector Search + Domain Q&A (Banking/Civic)\nCost: $0.0015 / 1k tokens]
+    Confidence -- "Retrieval Intent (Prob >= 0.75)" --> RAG["RAG Retrieval Tier<br/>Vector Search + Domain QA<br/>Cost: $0.0015 / 1k tokens"]
     
     %% Frontier Reasoning
-    Confidence -- "Complex / High-Entropy (Prob >= 0.70)" --> Frontier[Frontier Reasoning Tier\nClaude 3.5 Sonnet / GPT-4o\nCost: $0.0300 / 1k tokens]
+    Confidence -- "Complex / High-Entropy (Prob >= 0.70)" --> Frontier["Frontier Reasoning Tier<br/>Claude 3.5 Sonnet / GPT-4o<br/>Cost: $0.0300 / 1k tokens"]
     
     %% Observability
-    Classifier -.-> Drift[Drift & Observability Engine\nEntropy Tracking + Query Distribution]
-    Drift -.-> Prom[Prometheus Metrics & Health\n/metrics & /health]
+    Classifier -.-> Drift["Drift & Observability Engine<br/>Entropy Tracking + Query Distribution"]
+    Drift -.-> Prom["Prometheus Metrics & Health<br/>/metrics & /health"]
 ```
 
 ### ASCII Architecture Representation
