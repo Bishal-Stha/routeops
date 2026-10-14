@@ -16,6 +16,7 @@ PROCESSED_DIR = Path("data/processed")
 TRAIN_FILE = PROCESSED_DIR / "train.jsonl"
 VAL_FILE = PROCESSED_DIR / "val.jsonl"
 TEST_FILE = PROCESSED_DIR / "test.jsonl"
+HARD_TEST_FILE = PROCESSED_DIR / "hard_test.jsonl"
 STATS_FILE = Path("data/dataset_stats.json")
 
 
@@ -385,3 +386,28 @@ def test_dataset_stats_file_exists_and_matches() -> None:
     assert token_stats["max"] >= token_stats["min"]
     assert token_stats["mean"] > 0
     assert token_stats["median"] > 0
+
+
+def test_hard_test_slice_integrity(test_records: List[QueryRecord]) -> None:
+    """Validate hard_test.jsonl integrity, exact count of 72, subset of test, and class balance."""
+    assert HARD_TEST_FILE.is_file(), f"{HARD_TEST_FILE} must exist"
+    hard_records = load_jsonl_records(HARD_TEST_FILE)
+
+    # Hard count assertion: 18 per class * 4 = 72 total
+    assert len(hard_records) == 72
+
+    # Every hard test record must be in test_records
+    test_texts = {r.text for r in test_records}
+    for hr in hard_records:
+        assert hr.text in test_texts, f"Hard query '{hr.text}' must be part of test set"
+
+    # Class balance: exactly 18 per class
+    class_counts = {c: sum(1 for r in hard_records if r.label == c) for c in range(4)}
+    assert class_counts == {0: 18, 1: 18, 2: 18, 3: 18}
+
+    # Language balance per class: 7 en, 7 ne-rom, 4 ne
+    for c in range(4):
+        c_recs = [r for r in hard_records if r.label == c]
+        assert sum(1 for r in c_recs if r.lang == "en") == 7
+        assert sum(1 for r in c_recs if r.lang == "ne-rom") == 7
+        assert sum(1 for r in c_recs if r.lang == "ne") == 4

@@ -1,0 +1,92 @@
+{
+  "project": "RouteOps",
+  "task": "Multilingual Semantic Routing (en, ne-rom, ne)",
+  "hardware_target": "Intel Core i5-12450H (4 P-cores intra-op)",
+  "timestamp": "2026-10-14 08:54:15 UTC",
+  "models": {
+    "tfidf_baseline": {
+      "name": "TF-IDF (1-2 N-grams) + Logistic Regression",
+      "overall_accuracy": 0.8541666666666666,
+      "macro_f1": 0.8545270397588091,
+      "per_class_f1": {
+        "direct_response": 0.8793103448275862,
+        "frontier_reasoning": 0.8524590163934426,
+        "rag_retrieval": 0.819672131147541,
+        "guardrail_blocked": 0.8666666666666667
+      },
+      "per_language_f1": {
+        "en": 0.7711014447407085,
+        "ne-rom": 0.917084398976982,
+        "ne": 0.8934523809523809
+      },
+      "latency_p50_ms": 0.5288,
+      "latency_p95_ms": 0.6945,
+      "latency_p99_ms": 1.01,
+      "latency_mean_ms": 0.5471,
+      "model_size_mb": 0.52
+    },
+    "pytorch_finetuned": {
+      "name": "DistilBERT Multilingual Cased (FP32 PyTorch)",
+      "overall_accuracy": 0.875,
+      "macro_f1": 0.8735838366172036,
+      "weighted_f1": 0.8735838366172036,
+      "per_class_f1": {
+        "direct_response": 0.9009009009009009,
+        "frontier_reasoning": 0.8682170542635659,
+        "rag_retrieval": 0.7652173913043478,
+        "guardrail_blocked": 0.96
+      },
+      "per_language_f1": {
+        "en": 0.8302921555095468,
+        "ne-rom": 0.8950709446590848,
+        "ne": 0.9158981115502854
+      },
+      "hard_test_accuracy": 0.6388888888888888,
+      "hard_test_macro_f1": 0.6213063653839738,
+      "latency_p50_ms": 60.38884999907168,
+      "latency_p95_ms": 79.8028129514932,
+      "latency_p99_ms": 100.0581205898561,
+      "latency_mean_ms": 62.203294895895546,
+      "model_size_mb": 519.04,
+      "peak_vram_mb": 2599.91,
+      "vram_budget_mb": 3072.0,
+      "train_loss": 3.2970421200706843,
+      "training_epochs": 3,
+      "learning_rate": 3e-05,
+      "max_length": 64,
+      "timestamp": "2026-10-14 08:49:40 UTC"
+    },
+    "onnx_int8_quantized": {
+      "name": "DistilBERT Multilingual Cased (Dynamic Int8 ONNX)",
+      "overall_accuracy": 0.8833333333333333,
+      "macro_f1": 0.8827468540328851,
+      "per_class_f1": {
+        "direct_response": 0.8909090909090909,
+        "frontier_reasoning": 0.8943089430894309,
+        "rag_retrieval": 0.7933884297520661,
+        "guardrail_blocked": 0.9523809523809523
+      },
+      "per_language_f1": {
+        "en": 0.8304317036383033,
+        "ne-rom": 0.884654277992418,
+        "ne": 0.9791304347826086
+      },
+      "latency_p50_ms": 10.408922998976777,
+      "latency_p95_ms": 15.573581350145101,
+      "latency_p99_ms": 17.500075059215305,
+      "latency_mean_ms": 10.758077019836492,
+      "throughput_qps": 92.95341520200407,
+      "model_size_mb": 129.47
+    }
+  },
+  "sla_verification": {
+    "latency_p95_target_ms": 25.0,
+    "latency_p95_actual_ms": 15.57,
+    "latency_p95_passed": true,
+    "macro_f1_degradation_target_pct": 1.0,
+    "macro_f1_degradation_actual_pct": 0.0,
+    "macro_f1_degradation_passed": true,
+    "compression_ratio": 3.99,
+    "quantized_size_mb": 129.47
+  }
+}

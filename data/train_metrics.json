@@ -1,0 +1,31 @@
+{
+  "name": "DistilBERT Multilingual Cased (FP32 PyTorch)",
+  "overall_accuracy": 0.875,
+  "macro_f1": 0.8735838366172036,
+  "weighted_f1": 0.8735838366172036,
+  "per_class_f1": {
+    "direct_response": 0.9009009009009009,
+    "frontier_reasoning": 0.8682170542635659,
+    "rag_retrieval": 0.7652173913043478,
+    "guardrail_blocked": 0.96
+  },
+  "per_language_f1": {
+    "en": 0.8302921555095468,
+    "ne-rom": 0.8950709446590848,
+    "ne": 0.9158981115502854
+  },
+  "hard_test_accuracy": 0.6388888888888888,
+  "hard_test_macro_f1": 0.6213063653839738,
+  "latency_p50_ms": 60.38884999907168,
+  "latency_p95_ms": 79.8028129514932,
+  "latency_p99_ms": 100.0581205898561,
+  "latency_mean_ms": 62.203294895895546,
+  "model_size_mb": 519.04,
+  "peak_vram_mb": 2599.91,
+  "vram_budget_mb": 3072.0,
+  "train_loss": 3.2970421200706843,
+  "training_epochs": 3,
+  "learning_rate": 3e-05,
+  "max_length": 64,
+  "timestamp": "2026-10-14 08:49:40 UTC"
+}

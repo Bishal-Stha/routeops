@@ -5,6 +5,7 @@
 .claude/settings.local.json
 
 # Model artifacts and runs
+models
 models/
 mlruns/
 *.onnx

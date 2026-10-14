@@ -496,6 +496,7 @@ def print_rich_terminal_report(
     metrics: Dict[str, float],
     latencies: Dict[str, float],
     failures: List[FailureCase],
+    hard_metrics: Optional[Dict[str, float]] = None,
 ) -> None:
     """Print a clean, structured terminal report using Rich.
 
@@ -504,6 +505,7 @@ def print_rich_terminal_report(
         metrics: Computed validation/test performance metrics.
         latencies: Measured CPU inference latency metrics.
         failures: Top identified hard-negative failure cases.
+        hard_metrics: Optional performance metrics on dedicated hard-negative test slice.
     """
     console = Console()
 
@@ -554,6 +556,34 @@ def print_rich_terminal_report(
             f"Class {class_id} routing boundary",
         )
     console.print(perf_table)
+
+    if hard_metrics:
+        hard_table = Table(
+            title="[bold red]2b. Hard-Negative Test Slice Performance (72 queries)[/bold red]"
+        )
+        hard_table.add_column("Hard Slice Metric", style="yellow")
+        hard_table.add_column("Score", style="bold white", justify="right")
+        hard_table.add_column("Bag-of-Words Limitation Rationale", style="dim")
+        hard_table.add_row(
+            "Hard Test Accuracy",
+            f"{hard_metrics['accuracy']:.4f}",
+            "30% adversarial cross-class lexical overlap",
+        )
+        hard_table.add_row(
+            "Hard Test Macro F1",
+            f"{hard_metrics['macro_f1']:.4f}",
+            "Exposes lack of contextual self-attention",
+        )
+        for class_id, names in LABEL_INDEX_TO_NAMES.items():
+            c_name = names["canonical"]
+            r_name = names["routeops"]
+            val = hard_metrics.get(f"f1_{c_name}", 0.0)
+            hard_table.add_row(
+                f"Hard F1: {c_name} ({r_name})",
+                f"{val:.4f}",
+                f"Class {class_id} adversarial boundary",
+            )
+        console.print(hard_table)
 
     # 3. Per-Language Breakdown Table
     lang_table = Table(
@@ -750,6 +780,28 @@ def run_baseline(
         test_metrics["macro_f1"],
     )
 
+    # 4b. Evaluate Hard Negative Test Slice if present
+    hard_metrics: Dict[str, float] = {}
+    hard_test_file = Path("data/processed/hard_test.jsonl")
+    if hard_test_file.is_file():
+        try:
+            hard_records = load_dataset_split(hard_test_file)
+            ht_texts = [r["text"] for r in hard_records]
+            ht_labels = [r["label"] for r in hard_records]
+            ht_langs = [r["lang"] for r in hard_records]
+            ht_preds = pipeline.predict(ht_texts)
+            hard_metrics = compute_comprehensive_metrics(
+                ht_labels, list(ht_preds), ht_langs
+            )
+            logger.info(
+                "Hard-Negative Test Slice (%d queries) -> Accuracy: %.4f, Macro F1: %.4f",
+                len(hard_records),
+                hard_metrics["accuracy"],
+                hard_metrics["macro_f1"],
+            )
+        except Exception as e:
+            logger.warning("Could not evaluate hard_test slice: %s", e)
+
     # 5. Benchmark Latency
     logger.info("Benchmarking single-query CPU latency across test queries...")
     latencies = benchmark_cpu_latency(pipeline, test_texts)
@@ -784,6 +836,11 @@ def run_baseline(
             # Log test metrics
             mlflow.log_metrics(test_metrics)
 
+            # Log hard test metrics with prefix if available
+            if hard_metrics:
+                hard_prefixed = {f"hard_test_{k}": v for k, v in hard_metrics.items()}
+                mlflow.log_metrics(hard_prefixed)
+
             # Log latency metrics
             mlflow.log_metrics(latencies)
 
@@ -806,11 +863,18 @@ def run_baseline(
             pass  # with block ensures clean finish
 
     # 8. Render Terminal Report
-    print_rich_terminal_report(hyperparams, test_metrics, latencies, failure_cases)
+    print_rich_terminal_report(
+        hyperparams,
+        test_metrics,
+        latencies,
+        failure_cases,
+        hard_metrics=hard_metrics if hard_metrics else None,
+    )
 
     return {
         "pipeline": pipeline,
         "test_metrics": test_metrics,
+        "hard_metrics": hard_metrics,
         "val_metrics": val_metrics,
         "latencies": latencies,
         "failure_cases": failure_cases,

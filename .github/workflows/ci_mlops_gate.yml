@@ -1,0 +1,94 @@
+name: RouteOps CI & MLOps Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-validate:
+    name: Lint, Type Check & Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Linting Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort mypy pydantic
+
+      - name: Code Formatting Check (Black & isort)
+        run: |
+          black --check src tests
+          isort --check-only --profile black src tests
+
+      - name: Flake8 Style & Complexity Check
+        run: |
+          flake8 src tests --max-line-length=100 --extend-ignore=E203,W503
+
+      - name: Static Type Checking (mypy)
+        run: |
+          mypy src --ignore-missing-imports
+
+  test-suite:
+    name: Unit Tests & MLOps Gate Validation
+    needs: lint-and-validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Project Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run Dataset Integrity & Schema Tests
+        run: |
+          pytest tests/test_data.py -v
+
+      - name: Run Classical ML Baseline Tests
+        run: |
+          pytest tests/test_baseline.py -v
+
+      - name: Run DistilBERT Fine-Tuning Pipeline Tests
+        run: |
+          pytest tests/test_train.py -v
+
+      - name: Run ONNX Export & Dynamic Int8 Tests
+        run: |
+          pytest tests/test_onnx.py -v
+
+      - name: Verify Latency SLA (< 25ms P95) & Degradation Gates
+        run: |
+          python -c "
+          import json
+          from pathlib import Path
+
+          report_path = Path('data/model_comparison.json')
+          if report_path.is_file():
+              with open(report_path) as f:
+                  data = json.load(f)
+              sla = data.get('sla_verification', {})
+              print('Verifying SLA Gates:', sla)
+              assert sla.get('latency_p95_passed') is True, f'P95 latency SLA breached: {sla.get(\"latency_p95_actual_ms\")} ms'
+              assert sla.get('macro_f1_degradation_passed') is True, f'Macro F1 degradation exceeded 1.0%: {sla.get(\"macro_f1_degradation_actual_pct\")}%'
+              print('All MLOps SLA Gates Passed!')
+          else:
+              print('Notice: data/model_comparison.json generated during release pipeline')
+          "

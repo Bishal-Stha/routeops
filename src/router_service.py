@@ -234,7 +234,7 @@ class RouterService:
             "citizenship",
         ]
         if any(term in lower for term in rag_terms):
-            return np.array([0.05, 0.85, 0.08, 0.02], dtype=np.float32)
+            return np.array([0.05, 0.08, 0.85, 0.02], dtype=np.float32)
 
         # Frontier reasoning check (code, math, complex algorithms)
         frontier_terms = [
@@ -258,10 +258,10 @@ class RouterService:
             "derive",
         ]
         if any(term in lower for term in frontier_terms) or len(text.split()) > 20:
-            return np.array([0.03, 0.07, 0.88, 0.02], dtype=np.float32)
+            return np.array([0.03, 0.88, 0.07, 0.02], dtype=np.float32)
 
         # Default balanced prior
-        return np.array([0.15, 0.25, 0.55, 0.05], dtype=np.float32)
+        return np.array([0.15, 0.55, 0.25, 0.05], dtype=np.float32)
 
     def _infer_logits(self, query: str) -> np.ndarray:
         """Compute raw logits via ONNX inference or heuristic fallback."""
@@ -269,7 +269,6 @@ class RouterService:
             inputs = self.tokenizer(
                 query,
                 max_length=self.config.model.max_length,
-                padding="max_length",
                 truncation=True,
                 return_tensors="np",
             )
@@ -321,11 +320,6 @@ class RouterService:
         }
 
         guardrail_threshold = self.config.routing.thresholds.get("guardrail_flag", 0.60)
-        direct_threshold = self.config.routing.thresholds.get("direct_response", 0.80)
-        rag_threshold = self.config.routing.thresholds.get("rag_retrieval", 0.75)
-        frontier_threshold = self.config.routing.thresholds.get(
-            "frontier_reasoning", 0.70
-        )
 
         # 1. Guardrail Safety Check
         guardrail_prob = float(probs[3])
@@ -347,35 +341,26 @@ class RouterService:
                 is_guardrail_triggered=True,
             )
 
-        # 2. Semantic Routing Logic with Thresholds
+        # 2. Semantic Routing Logic with Dynamic Class Configuration
         arg_max_class = int(np.argmax(probs[:3]))
         max_prob = float(probs[arg_max_class])
+        routed_class = self.config.routing.labels.get(
+            arg_max_class, "frontier_reasoning"
+        )
+        routed_id = arg_max_class
+        threshold = self.config.routing.thresholds.get(routed_class, 0.70)
 
-        if arg_max_class == 0 and max_prob >= direct_threshold:
-            routed_class = "direct_response"
-            routed_id = 0
-            action = "route_to_direct"
-        elif arg_max_class == 1 and max_prob >= rag_threshold:
-            routed_class = "rag_retrieval"
-            routed_id = 1
-            action = "route_to_rag"
-        elif arg_max_class == 2 and max_prob >= frontier_threshold:
-            routed_class = "frontier_reasoning"
-            routed_id = 2
-            action = "route_to_frontier"
+        action_suffixes = {
+            "direct_response": "direct",
+            "frontier_reasoning": "frontier",
+            "rag_retrieval": "rag",
+        }
+        suffix = action_suffixes.get(routed_class, routed_class.split("_")[0])
+
+        if max_prob >= threshold:
+            action = f"route_to_{suffix}"
         else:
-            # Fallback for ambiguous or lower-confidence queries:
-            # If RAG probability is decent (> 0.40), route to RAG for safety, else Frontier
-            if probs[1] > 0.40:
-                routed_class = "rag_retrieval"
-                routed_id = 1
-                action = "route_to_rag_fallback"
-                max_prob = float(probs[1])
-            else:
-                routed_class = "frontier_reasoning"
-                routed_id = 2
-                action = "route_to_frontier_fallback"
-                max_prob = float(probs[2])
+            action = f"route_to_{suffix}_fallback"
 
         cost = self.config.routing.token_costs_per_1k.get(routed_class, 0.0300)
         latency_ms = (time.perf_counter() - start_time) * 1000.0

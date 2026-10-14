@@ -6,49 +6,63 @@
       "count": 1120,
       "classes": {
         "simple_faq": 280,
-        "unsafe_injection": 280,
+        "technical_complex": 280,
         "billing_account": 280,
-        "technical_complex": 280
+        "unsafe_injection": 280
       },
       "languages": {
         "ne-rom": 448,
-        "ne": 224,
-        "en": 448
+        "en": 448,
+        "ne": 224
       }
     },
     "val": {
       "count": 240,
       "classes": {
         "simple_faq": 60,
-        "technical_complex": 60,
+        "billing_account": 60,
         "unsafe_injection": 60,
-        "billing_account": 60
-      },
-      "languages": {
-        "ne": 48,
-        "en": 96,
-        "ne-rom": 96
-      }
-    },
-    "test": {
-      "count": 240,
-      "classes": {
-        "simple_faq": 60,
-        "unsafe_injection": 60,
-        "technical_complex": 60,
-        "billing_account": 60
+        "technical_complex": 60
       },
       "languages": {
         "en": 96,
         "ne-rom": 96,
         "ne": 48
       }
+    },
+    "test": {
+      "count": 240,
+      "classes": {
+        "unsafe_injection": 60,
+        "technical_complex": 60,
+        "billing_account": 60,
+        "simple_faq": 60
+      },
+      "languages": {
+        "ne-rom": 96,
+        "en": 96,
+        "ne": 48
+      }
+    },
+    "hard_test": {
+      "count": 72,
+      "classes": {
+        "simple_faq": 18,
+        "technical_complex": 18,
+        "billing_account": 18,
+        "unsafe_injection": 18
+      },
+      "languages": {
+        "en": 28,
+        "ne-rom": 28,
+        "ne": 16
+      }
     }
   },
   "token_estimate_stats": {
     "min": 9,
     "max": 43,
-    "mean": 19.52,
+    "mean": 19.34,
     "median": 20.0
   }
 }
