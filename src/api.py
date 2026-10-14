@@ -7,6 +7,8 @@ scraping (/metrics), and real-time concept drift summaries (/v1/drift).
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 import time
 from contextlib import asynccontextmanager
@@ -14,6 +16,7 @@ from typing import AsyncGenerator, Optional
 
 from fastapi import FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -163,6 +166,107 @@ async def route_query_endpoint(request: RouteRequest) -> RouteDecision:
         )
 
     return decision
+
+
+@app.post(
+    "/v1/route/stream",
+    status_code=status.HTTP_200_OK,
+    summary="Route query and stream execution steps and tokens via SSE",
+)
+async def route_query_stream_endpoint(request: RouteRequest) -> StreamingResponse:
+    """Classify query, yield live execution steps and streaming response tokens via Server-Sent Events (SSE)."""
+    router = get_router_service()
+    monitor = get_drift_monitor()
+
+    decision = router.route_query(
+        query=request.query,
+        language_hint=request.language_hint,
+    )
+
+    # Record telemetry into drift monitor and Prometheus
+    monitor.record_query(
+        routed_class=decision.routed_class,
+        confidence=decision.confidence,
+        entropy=decision.entropy,
+        latency_ms=decision.latency_ms,
+        query_text=decision.query,
+        language=decision.language_detected,
+        action=decision.action,
+        is_guardrail_triggered=decision.is_guardrail_triggered,
+    )
+
+    async def event_generator() -> AsyncGenerator[str, None]:
+        # 1. Yield step 1: Language detection & PII
+        step_1_data = json.dumps({
+            "step": "language_and_pii",
+            "detected_lang": decision.detected_lang,
+            "pii_detected": decision.pii_detected,
+            "redacted_query": decision.redacted_query,
+        })
+        yield f"data: {step_1_data}\n\n"
+        await asyncio.sleep(0.04)
+
+        # 2. Yield step 2: ONNX inference & confidence
+        step_2_data = json.dumps({
+            "step": "onnx_classification",
+            "predicted_class": decision.predicted_class,
+            "confidence": decision.confidence,
+            "entropy": decision.entropy,
+            "probabilities": decision.probabilities,
+        })
+        yield f"data: {step_2_data}\n\n"
+        await asyncio.sleep(0.04)
+
+        # 3. Yield step 3: Guardrail & Cache check
+        step_3_data = json.dumps({
+            "step": "guardrail_and_cache",
+            "is_guardrail_triggered": decision.is_guardrail_triggered,
+            "is_cache_hit": decision.is_cache_hit,
+            "routed_tier": decision.routed_tier,
+            "action": decision.action,
+        })
+        yield f"data: {step_3_data}\n\n"
+        await asyncio.sleep(0.04)
+
+        # 4. Stream response tokens word by word
+        response_text = decision.response_text or "Query processed successfully."
+        words = response_text.split(" ")
+        token_chunk_size = max(1, len(words) // 8)
+
+        for i in range(0, len(words), token_chunk_size):
+            chunk = " ".join(words[i:i + token_chunk_size])
+            if i + token_chunk_size < len(words):
+                chunk += " "
+            token_data = json.dumps({
+                "step": "streaming_token",
+                "token": chunk,
+                "is_complete": False,
+            })
+            yield f"data: {token_data}\n\n"
+            await asyncio.sleep(0.03)
+
+        # 5. Final summary event with full metadata
+        final_data = json.dumps({
+            "step": "complete",
+            "request_id": decision.request_id,
+            "routed_class": decision.routed_class,
+            "confidence": decision.confidence,
+            "latency_ms": decision.latency_ms,
+            "estimated_cost_usd": decision.estimated_cost_usd,
+            "cost_saved_usd": decision.cost_saved_usd,
+            "is_complete": True,
+        })
+        yield f"data: {final_data}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @app.get(
