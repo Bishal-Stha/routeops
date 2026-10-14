@@ -14,12 +14,7 @@ from typing import Any, Deque, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 try:
-    from prometheus_client import (
-        Counter,
-        Gauge,
-        Histogram,
-        generate_latest,
-    )
+    from prometheus_client import Counter, Gauge, Histogram, generate_latest
 
     PROMETHEUS_AVAILABLE = True
 except ImportError:

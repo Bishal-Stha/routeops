@@ -24,12 +24,12 @@ install:
 
 lint:
 	$(PYTHON) -m flake8 src tests --max-line-length=100 --extend-ignore=E203,W503 || true
-	$(PYTHON) -m isort --check-only src tests || true
+	$(PYTHON) -m isort --check-only --profile black src tests || true
 	$(PYTHON) -m black --check src tests || true
 	$(PYTHON) -m mypy src --ignore-missing-imports || true
 
 format:
-	$(PYTHON) -m isort src tests
+	$(PYTHON) -m isort --profile black src tests
 	$(PYTHON) -m black src tests
 
 test:

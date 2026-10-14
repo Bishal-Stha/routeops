@@ -1,0 +1,54 @@
+{
+  "total_records": 1600,
+  "unique_queries": 1600,
+  "splits": {
+    "train": {
+      "count": 1120,
+      "classes": {
+        "simple_faq": 280,
+        "unsafe_injection": 280,
+        "billing_account": 280,
+        "technical_complex": 280
+      },
+      "languages": {
+        "ne-rom": 448,
+        "ne": 224,
+        "en": 448
+      }
+    },
+    "val": {
+      "count": 240,
+      "classes": {
+        "simple_faq": 60,
+        "technical_complex": 60,
+        "unsafe_injection": 60,
+        "billing_account": 60
+      },
+      "languages": {
+        "ne": 48,
+        "en": 96,
+        "ne-rom": 96
+      }
+    },
+    "test": {
+      "count": 240,
+      "classes": {
+        "simple_faq": 60,
+        "unsafe_injection": 60,
+        "technical_complex": 60,
+        "billing_account": 60
+      },
+      "languages": {
+        "en": 96,
+        "ne-rom": 96,
+        "ne": 48
+      }
+    }
+  },
+  "token_estimate_stats": {
+    "min": 9,
+    "max": 43,
+    "mean": 19.52,
+    "median": 20.0
+  }
+}

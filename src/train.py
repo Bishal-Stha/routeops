@@ -233,7 +233,7 @@ def train_model(config: RouteOpsConfig) -> str:
         args=training_args,
         train_dataset=tokenized_datasets["train"],
         eval_dataset=tokenized_datasets["validation"],
-        tokenizer=tokenizer,
+        tokenizer=tokenizer,  # type: ignore[call-arg]
         compute_metrics=compute_metrics,
         callbacks=[vram_callback],
     )
