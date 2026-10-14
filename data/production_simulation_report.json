@@ -1,0 +1,68 @@
+{
+  "project": "RouteOps",
+  "simulation_task": "1,000-Query Production Stream & Unit-Economics ROI Audit",
+  "timestamp": "2026-10-14 09:45:18 UTC",
+  "summary": {
+    "total_queries_processed": 1000,
+    "cache_hits": 347,
+    "cache_hit_rate_pct": 34.7,
+    "guardrail_blocks": 229,
+    "guardrail_block_rate_pct": 22.9,
+    "simulation_runtime_sec": 15.3,
+    "throughput_qps": 65.34,
+    "latency_p50_ms": 13.23,
+    "latency_p95_ms": 22.8,
+    "latency_p99_ms": 26.62
+  },
+  "tier_routing_breakdown": {
+    "cache_hit": {
+      "count": 347,
+      "percentage": 34.7
+    },
+    "guardrail_blocked": {
+      "count": 229,
+      "percentage": 22.9
+    },
+    "rag_account_tier": {
+      "count": 137,
+      "percentage": 13.7
+    },
+    "frontier_reasoning_tier": {
+      "count": 135,
+      "percentage": 13.5
+    },
+    "slm_fast_tier": {
+      "count": 130,
+      "percentage": 13.0
+    },
+    "low_conf_fallback": {
+      "count": 22,
+      "percentage": 2.2
+    }
+  },
+  "unit_economics": {
+    "naive_frontier_cost_usd": 0.073542,
+    "routeops_actual_cost_usd": 0.026791,
+    "total_saved_usd": 0.046751,
+    "cost_reduction_pct": 63.57,
+    "total_tokens_evaluated": 18562,
+    "cost_per_query_naive_usd": 7.4e-05,
+    "cost_per_query_routeops_usd": 2.7e-05
+  },
+  "drift_observability": {
+    "baseline_queries": 800,
+    "drift_wave_queries": 200,
+    "psi_query_length": 1.7739,
+    "psi_confidence": 9.074,
+    "js_divergence_class": 0.0149,
+    "baseline_low_confidence_pct": 1.5,
+    "drift_wave_low_confidence_pct": 48.0,
+    "retrain_alert_triggered": true,
+    "alert_severity": "CRITICAL",
+    "drift_reasons": [
+      "Critical Confidence PSI Shift (9.0740 >= 0.25): Model predictive certainty collapsed.",
+      "Token Length PSI Shift (1.7739 >= 0.25): Input query length distribution changed.",
+      "Low-Confidence Surge (48.0% > 15.0% threshold): High concentration of ambiguous or Out-Of-Distribution queries detected."
+    ]
+  }
+}
