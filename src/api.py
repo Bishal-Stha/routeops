@@ -14,6 +14,7 @@ from typing import AsyncGenerator, Optional
 
 from fastapi import FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from src.config import load_config
@@ -208,3 +209,7 @@ async def prometheus_metrics() -> Response:
     monitor = get_drift_monitor()
     raw_metrics = monitor.export_metrics()
     return Response(content=raw_metrics, media_type="text/plain; version=0.0.4")
+
+
+# Mount static UI dashboard at root
+app.mount("/", StaticFiles(directory="ui", html=True), name="ui")
