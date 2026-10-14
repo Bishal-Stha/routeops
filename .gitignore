@@ -1,0 +1,41 @@
+# Environment and Secrets
+.env*
+*key*
+*secret*
+.claude/settings.local.json
+
+# Model artifacts and runs
+models/
+mlruns/
+*.onnx
+*.onnx_data
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# OS and IDE files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
