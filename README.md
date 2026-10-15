@@ -1,10 +1,13 @@
 # RouteOps: Multilingual Semantic Router & Edge MLOps Gateway
 
+[![Live Demo](https://img.shields.io/badge/%F0%9F%8C%90%20Live%20Demo-routeops--nine.vercel.app-10B981?style=for-the-badge)](https://routeops-nine.vercel.app)
 [![CI Status](https://img.shields.io/badge/CI-Passing-brightgreen.svg)]()
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)]()
 [![Hardware Budget](https://img.shields.io/badge/VRAM-RTX%202050%20(4GB)-orange.svg)]()
 [![Latency Target](https://img.shields.io/badge/P95%20Latency-%3C15ms%20(Int8)-purple.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)]()
+
+> **[🌐 Live Interactive Demo & MLOps Playground: routeops-nine.vercel.app](https://routeops-nine.vercel.app)**
 
 **RouteOps** is an enterprise-grade, cost-aware semantic router and inference gateway purpose-built for low-latency triage across multilingual workloads (English, Romanized Nepali `ne-rom`, and Devanagari Nepali `ne`). 
 

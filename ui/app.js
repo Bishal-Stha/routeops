@@ -16,6 +16,8 @@ const CONFIG = {
   apiBaseUrl: window.ROUTEOPS_API_URL || '',
   isBackendHealthy: false,
   cacheStore: new Map(),
+  supabaseUrl: window.ROUTEOPS_SUPABASE_URL || 'https://lijojlrjhmiintphufpy.supabase.co',
+  supabaseAnonKey: window.ROUTEOPS_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder',
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -420,6 +422,43 @@ function renderDecisionOutput(decision, engineLabel) {
   const traceStatus = document.getElementById('trace-overall-status');
   if (traceStatus) {
     traceStatus.textContent = `Routed to ${decision.routed_class} (${decision.latency_ms.toFixed(1)}ms)`;
+  }
+  // 7. Background Supabase Telemetry Logging (Non-blocking)
+  logTelemetryToSupabase(decision);
+}
+
+function logTelemetryToSupabase(decision) {
+  if (!CONFIG.supabaseUrl || !CONFIG.supabaseAnonKey || CONFIG.supabaseAnonKey.includes('placeholder')) {
+    return;
+  }
+
+  try {
+    const payload = {
+      request_id: decision.request_id,
+      query_text: decision.query,
+      redacted_query: decision.redacted_query,
+      detected_lang: decision.detected_lang || decision.language_detected || 'en',
+      routed_class: decision.routed_class,
+      routed_tier: decision.routed_tier,
+      confidence: decision.confidence,
+      latency_ms: decision.latency_ms,
+      cost_saved_usd: decision.cost_saved_usd,
+      is_cache_hit: decision.is_cache_hit || false,
+      is_guardrail_triggered: decision.is_guardrail_triggered || false,
+    };
+
+    fetch(`${CONFIG.supabaseUrl}/rest/v1/routeops_telemetry_logs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': CONFIG.supabaseAnonKey,
+        'Authorization': `Bearer ${CONFIG.supabaseAnonKey}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(payload)
+    }).catch(() => {});
+  } catch (e) {
+    // Non-blocking
   }
 }
 

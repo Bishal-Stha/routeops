@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import sqlite3
 import threading
 import time
@@ -34,6 +35,12 @@ class TelemetryDB:
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
+        self.supabase_url = os.getenv("SUPABASE_URL", "").rstrip("/")
+        self.supabase_key = (
+            os.getenv("SUPABASE_ANON_KEY")
+            or os.getenv("SUPABASE_KEY")
+            or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "")
+        )
         self._init_schema()
 
     def _get_connection(self) -> sqlite3.Connection:
@@ -140,6 +147,53 @@ class TelemetryDB:
                 ),
             )
             conn.commit()
+
+        # Asynchronous Supabase REST push (if configured)
+        if self.supabase_url and self.supabase_key:
+            self._async_log_supabase(
+                {
+                    "request_id": request_id,
+                    "created_at": ts,
+                    "query_text": query_text,
+                    "detected_lang": detected_lang,
+                    "predicted_class": predicted_class,
+                    "routed_class": predicted_class,
+                    "routed_tier": routed_tier,
+                    "confidence": confidence,
+                    "latency_ms": latency_ms,
+                    "cost_saved_usd": cost_saved_usd,
+                }
+            )
+
+    def _async_log_supabase(self, payload: Dict[str, Any]) -> None:
+        """Non-blocking background push to Supabase REST endpoint."""
+
+        def _post() -> None:
+            try:
+                import urllib.request
+
+                url = f"{self.supabase_url}/rest/v1/routeops_telemetry_logs"
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/json",
+                        "apikey": self.supabase_key,
+                        "Authorization": f"Bearer {self.supabase_key}",
+                        "Prefer": "return=minimal",
+                    },
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=3.0) as resp:
+                    if resp.status not in (200, 201):
+                        logger.debug(
+                            "Supabase telemetry logged status: %s", resp.status
+                        )
+            except Exception as e:
+                logger.debug("Supabase background telemetry skipped (%s)", e)
+
+        t = threading.Thread(target=_post, daemon=True)
+        t.start()
 
     # -------------------------------------------------------------------------
     # Semantic Vector Cache Operations
