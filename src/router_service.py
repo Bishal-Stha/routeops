@@ -12,6 +12,7 @@ import hashlib
 import json
 import logging
 import math
+import os
 import re
 import time
 import uuid
@@ -241,6 +242,42 @@ class RouteOpsGateway:
             if p.is_file():
                 target_path = p
                 break
+
+        # 2b. Cloud Auto-Bootstrap: Check Hugging Face Hub if no local ONNX model is found
+        if target_path is None:
+            hf_repo = os.getenv("HF_MODEL_REPO")
+            if hf_repo:
+                try:
+                    from huggingface_hub import hf_hub_download
+
+                    target_filename = (
+                        "model_quantized.onnx" if self.use_quantized else "model.onnx"
+                    )
+                    local_dir = (
+                        "models/onnx_quantized" if self.use_quantized else "models/onnx"
+                    )
+                    os.makedirs(local_dir, exist_ok=True)
+                    logger.info(
+                        "Attempting cloud model bootstrap from HF Hub: %s (filename: %s)...",
+                        hf_repo,
+                        target_filename,
+                    )
+                    downloaded_file = hf_hub_download(
+                        repo_id=hf_repo,
+                        filename=target_filename,
+                        local_dir=local_dir,
+                    )
+                    if downloaded_file and Path(downloaded_file).is_file():
+                        target_path = Path(downloaded_file)
+                        logger.info(
+                            "Successfully auto-bootstrapped ONNX model from HF Hub: %s",
+                            target_path,
+                        )
+                except Exception as hf_err:
+                    logger.warning(
+                        "HF Hub auto-bootstrap failed (%s). Continuing with heuristic fallback.",
+                        hf_err,
+                    )
 
         # 3. Configure ONNX Runtime Session Options
         if target_path:

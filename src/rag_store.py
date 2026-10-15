@@ -119,7 +119,6 @@ CURATED_DOMAIN_DOCS: List[Dict[str, Any]] = [
         ),
         "keywords": ["esewa", "merchant", "api", "hmac", "signature", "integration"],
     },
-
     # --- Category 2: NTC & Ncell Telecom Data Pack Activation (Docs 8-14) ---
     {
         "doc_id": "ntc_001",
@@ -199,7 +198,6 @@ CURATED_DOMAIN_DOCS: List[Dict[str, Any]] = [
         ),
         "keywords": ["slow", "internet", "apn", "4g", "network", "troubleshoot"],
     },
-
     # --- Category 3: Local Banking, Fixed Deposits, KYC & Loans (Docs 15-22) ---
     {
         "doc_id": "bank_001",
@@ -271,7 +269,14 @@ CURATED_DOMAIN_DOCS: List[Dict[str, Any]] = [
             "Credit cards require a minimum monthly salary threshold of NRs. 40,000 or a blocked "
             "Fixed Deposit collateral equivalent to 120% of the requested credit limit."
         ),
-        "keywords": ["credit card", "dollar card", "pan", "international", "bank", "limit"],
+        "keywords": [
+            "credit card",
+            "dollar card",
+            "pan",
+            "international",
+            "bank",
+            "limit",
+        ],
     },
     {
         "doc_id": "bank_007",
@@ -283,7 +288,14 @@ CURATED_DOMAIN_DOCS: List[Dict[str, Any]] = [
             "you must re-verify your identity via debit card number, PIN, and SMS OTP, or visit "
             "your home branch to unbind the previous device MAC address."
         ),
-        "keywords": ["mobile banking", "otp", "device binding", "app", "security", "bank"],
+        "keywords": [
+            "mobile banking",
+            "otp",
+            "device binding",
+            "app",
+            "security",
+            "bank",
+        ],
     },
     {
         "doc_id": "bank_008",
@@ -297,7 +309,6 @@ CURATED_DOMAIN_DOCS: List[Dict[str, Any]] = [
         ),
         "keywords": ["locker", "safe", "deposit", "gold", "rental", "bank"],
     },
-
     # --- Category 4: Technical API Rate Limits & Gateway Rules (Docs 23-28) ---
     {
         "doc_id": "api_001",
@@ -333,7 +344,14 @@ CURATED_DOMAIN_DOCS: List[Dict[str, Any]] = [
             "after which stale embeddings are pruned. When the cache table exceeds 10,000 entries, "
             "LRU (Least Recently Used) eviction based on hit_count and timestamp is automatically executed."
         ),
-        "keywords": ["semantic cache", "ttl", "cosine", "similarity", "eviction", "sqlite"],
+        "keywords": [
+            "semantic cache",
+            "ttl",
+            "cosine",
+            "similarity",
+            "eviction",
+            "sqlite",
+        ],
     },
     {
         "doc_id": "api_004",
@@ -358,7 +376,14 @@ CURATED_DOMAIN_DOCS: List[Dict[str, Any]] = [
             "A PSI score below 0.10 indicates stable operations; 0.10 <= PSI < 0.25 triggers a warning alert; "
             "and PSI >= 0.25 signals significant concept drift requiring automated model fine-tuning."
         ),
-        "keywords": ["psi", "drift", "monitoring", "stability", "jensen-shannon", "mlops"],
+        "keywords": [
+            "psi",
+            "drift",
+            "monitoring",
+            "stability",
+            "jensen-shannon",
+            "mlops",
+        ],
     },
     {
         "doc_id": "api_006",
@@ -370,7 +395,14 @@ CURATED_DOMAIN_DOCS: List[Dict[str, Any]] = [
             "tier to ensure safety and accuracy. Unit economic savings are quantified by comparing actual "
             "route costs against the naive baseline cost of running every query on the frontier LLM."
         ),
-        "keywords": ["confidence", "abstention", "cascade", "entropy", "economics", "cost"],
+        "keywords": [
+            "confidence",
+            "abstention",
+            "cascade",
+            "entropy",
+            "economics",
+            "cost",
+        ],
     },
 ]
 
@@ -464,7 +496,9 @@ class RAGStore:
         scored_docs.sort(key=lambda x: x[1], reverse=True)
         return scored_docs[:top_k]
 
-    def add_document(self, doc_id: str, title: str, category: str, content: str, keywords: List[str]) -> None:
+    def add_document(
+        self, doc_id: str, title: str, category: str, content: str, keywords: List[str]
+    ) -> None:
         """Add a new document to the RAG store and update the embedding index."""
         new_dict = {
             "doc_id": doc_id,

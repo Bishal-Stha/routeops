@@ -218,3 +218,31 @@ make test
 make format
 make lint
 ```
+
+---
+
+## Zero-Cost Live Deployment (Dual-Deploy Architecture)
+
+RouteOps supports a dual-deploy architecture with instant frontend loading and zero cold starts:
+
+### 1. Instant Frontend on Vercel (`ui/`)
+Deploy the static dashboard to Vercel for instant sub-second edge delivery:
+```bash
+# Deploy to Vercel in 1 command
+vercel --prod
+```
+The client-side engine automatically runs deterministic routing and PII masking if the backend container is spinning up.
+
+### 2. Free 16GB RAM Backend on Hugging Face Spaces (Docker)
+Push the quantized Int8 ONNX model and start the FastAPI gateway container:
+```bash
+# 1. Upload model to Hugging Face Model Hub
+export HF_TOKEN="hf_your_token_here"
+python scripts/deploy_hf.py --repo-id <your-username>/routeops-model
+
+# 2. Deploy Docker Space on Hugging Face Spaces (Port 7860 default)
+# Set Environment Variable on HF Space:
+# HF_MODEL_REPO=<your-username>/routeops-model
+```
+The Docker container automatically downloads the quantized ONNX artifact on launch and exposes Swagger docs at `/docs` with full CORS support.
+

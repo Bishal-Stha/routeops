@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from src.rag_store import RAGStore, RAGDocument, CURATED_DOMAIN_DOCS
+from src.rag_store import CURATED_DOMAIN_DOCS, RAGDocument, RAGStore
 
 
 @pytest.fixture

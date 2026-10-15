@@ -1,5 +1,6 @@
 # RouteOps - Multilingual Semantic Router & MLOps Gateway
-# Containerized deployment Dockerfile supporting CPU/GPU inference
+# Containerized deployment Dockerfile supporting CPU/GPU inference,
+# local Docker, Render, Railway, and Hugging Face Spaces (Port 7860/8000)
 
 FROM python:3.11-slim AS builder
 
@@ -31,18 +32,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
+# Create non-root user for Hugging Face Spaces compatibility (uid 1000)
+RUN useradd -m -u 1000 user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
+
 # Copy project files
-COPY . /app
+COPY --chown=user:user . /app
+
+USER user
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1
-ENV PORT=8000
+ENV PORT=7860
 
+EXPOSE 7860
 EXPOSE 8000
 
-# Health check probe
+# Health check probe using dynamic $PORT fallback
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:${PORT:-7860}/health || exit 1
 
-# Start FastAPI gateway via uvicorn
-CMD ["uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start FastAPI gateway via uvicorn supporting dynamic PORT
+CMD ["sh", "-c", "uvicorn src.api:app --host 0.0.0.0 --port ${PORT:-7860}"]

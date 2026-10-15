@@ -174,7 +174,7 @@ async def route_query_endpoint(request: RouteRequest) -> RouteDecision:
     summary="Route query and stream execution steps and tokens via SSE",
 )
 async def route_query_stream_endpoint(request: RouteRequest) -> StreamingResponse:
-    """Classify query, yield live execution steps and streaming response tokens via Server-Sent Events (SSE)."""
+    """Classify query, yield live execution steps and streaming tokens via SSE."""
     router = get_router_service()
     monitor = get_drift_monitor()
 
@@ -197,34 +197,40 @@ async def route_query_stream_endpoint(request: RouteRequest) -> StreamingRespons
 
     async def event_generator() -> AsyncGenerator[str, None]:
         # 1. Yield step 1: Language detection & PII
-        step_1_data = json.dumps({
-            "step": "language_and_pii",
-            "detected_lang": decision.detected_lang,
-            "pii_detected": decision.pii_detected,
-            "redacted_query": decision.redacted_query,
-        })
+        step_1_data = json.dumps(
+            {
+                "step": "language_and_pii",
+                "detected_lang": decision.detected_lang,
+                "pii_detected": decision.pii_detected,
+                "redacted_query": decision.redacted_query,
+            }
+        )
         yield f"data: {step_1_data}\n\n"
         await asyncio.sleep(0.04)
 
         # 2. Yield step 2: ONNX inference & confidence
-        step_2_data = json.dumps({
-            "step": "onnx_classification",
-            "predicted_class": decision.predicted_class,
-            "confidence": decision.confidence,
-            "entropy": decision.entropy,
-            "probabilities": decision.probabilities,
-        })
+        step_2_data = json.dumps(
+            {
+                "step": "onnx_classification",
+                "predicted_class": decision.predicted_class,
+                "confidence": decision.confidence,
+                "entropy": decision.entropy,
+                "probabilities": decision.probabilities,
+            }
+        )
         yield f"data: {step_2_data}\n\n"
         await asyncio.sleep(0.04)
 
         # 3. Yield step 3: Guardrail & Cache check
-        step_3_data = json.dumps({
-            "step": "guardrail_and_cache",
-            "is_guardrail_triggered": decision.is_guardrail_triggered,
-            "is_cache_hit": decision.is_cache_hit,
-            "routed_tier": decision.routed_tier,
-            "action": decision.action,
-        })
+        step_3_data = json.dumps(
+            {
+                "step": "guardrail_and_cache",
+                "is_guardrail_triggered": decision.is_guardrail_triggered,
+                "is_cache_hit": decision.is_cache_hit,
+                "routed_tier": decision.routed_tier,
+                "action": decision.action,
+            }
+        )
         yield f"data: {step_3_data}\n\n"
         await asyncio.sleep(0.04)
 
@@ -234,28 +240,32 @@ async def route_query_stream_endpoint(request: RouteRequest) -> StreamingRespons
         token_chunk_size = max(1, len(words) // 8)
 
         for i in range(0, len(words), token_chunk_size):
-            chunk = " ".join(words[i:i + token_chunk_size])
+            chunk = " ".join(words[i : i + token_chunk_size])
             if i + token_chunk_size < len(words):
                 chunk += " "
-            token_data = json.dumps({
-                "step": "streaming_token",
-                "token": chunk,
-                "is_complete": False,
-            })
+            token_data = json.dumps(
+                {
+                    "step": "streaming_token",
+                    "token": chunk,
+                    "is_complete": False,
+                }
+            )
             yield f"data: {token_data}\n\n"
             await asyncio.sleep(0.03)
 
         # 5. Final summary event with full metadata
-        final_data = json.dumps({
-            "step": "complete",
-            "request_id": decision.request_id,
-            "routed_class": decision.routed_class,
-            "confidence": decision.confidence,
-            "latency_ms": decision.latency_ms,
-            "estimated_cost_usd": decision.estimated_cost_usd,
-            "cost_saved_usd": decision.cost_saved_usd,
-            "is_complete": True,
-        })
+        final_data = json.dumps(
+            {
+                "step": "complete",
+                "request_id": decision.request_id,
+                "routed_class": decision.routed_class,
+                "confidence": decision.confidence,
+                "latency_ms": decision.latency_ms,
+                "estimated_cost_usd": decision.estimated_cost_usd,
+                "cost_saved_usd": decision.cost_saved_usd,
+                "is_complete": True,
+            }
+        )
         yield f"data: {final_data}\n\n"
 
     return StreamingResponse(
