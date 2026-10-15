@@ -6,6 +6,7 @@
   --card-surface: #121215;
   --card-surface-hover: #17181D;
   --card-elevated: #181920;
+  --header-bg: rgba(9, 9, 11, 0.92);
   --border-subtle: #27272A;
   --border-hover: #3F3F46;
 
@@ -37,6 +38,38 @@
   --radius-sm: 6px;
 
   --transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Light Theme Variables (Linear / Vercel Light Palette) */
+[data-theme="light"] {
+  --bg-obsidian: #FAFAFA;
+  --bg-subtle: #F4F4F5;
+  --card-surface: #FFFFFF;
+  --card-surface-hover: #F8F9FA;
+  --card-elevated: #F4F4F5;
+  --header-bg: rgba(250, 250, 250, 0.94);
+  --border-subtle: #E4E4E7;
+  --border-hover: #D4D4D8;
+
+  /* Inverted Zinc tokens for high-contrast crisp readability */
+  --zinc-100: #09090B;
+  --zinc-200: #18181B;
+  --zinc-300: #27272A;
+  --zinc-400: #52525B;
+  --zinc-500: #71717A;
+  --zinc-600: #A1A1AA;
+  --zinc-700: #D4D4D8;
+  --zinc-800: #E4E4E7;
+  --zinc-900: #F4F4F5;
+
+  --emerald: #059669;
+  --emerald-subtle: rgba(5, 150, 105, 0.12);
+  --amber: #D97706;
+  --amber-subtle: rgba(217, 119, 6, 0.12);
+  --rose: #DC2626;
+  --rose-subtle: rgba(220, 38, 38, 0.12);
+  --indigo: #4F46E5;
+  --indigo-subtle: rgba(79, 70, 229, 0.12);
 }
 
 * {
@@ -90,7 +123,7 @@ header.app-header {
   align-items: center;
   padding: 12px 32px;
   border-bottom: 1px solid var(--border-subtle);
-  background-color: rgba(9, 9, 11, 0.92);
+  background-color: var(--header-bg);
   backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
@@ -198,6 +231,45 @@ header.app-header {
 .pulsing-dot.offline {
   background-color: var(--amber);
   box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--card-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--zinc-300);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.theme-toggle-btn:hover {
+  background: var(--card-surface-hover);
+  border-color: var(--border-hover);
+  color: var(--zinc-100);
+}
+
+/* In Dark mode (default): show sun icon, hide moon icon */
+.theme-toggle-btn .sun-icon {
+  display: block;
+}
+
+.theme-toggle-btn .moon-icon {
+  display: none;
+}
+
+/* In Light mode: hide sun icon, show moon icon */
+[data-theme="light"] .theme-toggle-btn .sun-icon {
+  display: none;
+}
+
+[data-theme="light"] .theme-toggle-btn .moon-icon {
+  display: block;
 }
 
 .nav-link-btn {
@@ -1276,6 +1348,115 @@ canvas#driftWaveCanvas {
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
+}
+
+/* Light Theme Component Surface Overrides */
+[data-theme="light"] .brand-logo,
+[data-theme="light"] .eyebrow-chip,
+[data-theme="light"] .hero-subtext code,
+[data-theme="light"] .badge-sub,
+[data-theme="light"] .view-tabs,
+[data-theme="light"] .live-status-pill,
+[data-theme="light"] .nav-link-btn,
+[data-theme="light"] .trace-stage,
+[data-theme="light"] textarea,
+[data-theme="light"] select,
+[data-theme="light"] input[type="text"],
+[data-theme="light"] .preset-card,
+[data-theme="light"] .decision-meta-strip,
+[data-theme="light"] .inspector-card,
+[data-theme="light"] .diff-code,
+[data-theme="light"] .human-response-box,
+[data-theme="light"] .json-pre,
+[data-theme="light"] .code-window-header,
+[data-theme="light"] .code-pane-wrap,
+[data-theme="light"] .btn-copy-code,
+[data-theme="light"] .roi-metric-box,
+[data-theme="light"] .dm-metric,
+[data-theme="light"] .drift-wave-canvas-wrap,
+[data-theme="light"] .btn-secondary,
+[data-theme="light"] .workspace-table th,
+[data-theme="light"] .feature-box,
+[data-theme="light"] .spec-card {
+  background-color: #FFFFFF;
+  border-color: var(--border-subtle);
+  color: var(--zinc-200);
+}
+
+[data-theme="light"] .view-tabs {
+  background-color: #F4F4F5;
+}
+
+[data-theme="light"] .view-tab.active {
+  background-color: #FFFFFF;
+  color: var(--zinc-100);
+  border-color: var(--border-subtle);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .nav-link-primary {
+  background-color: #18181B;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .btn-primary {
+  background-color: #18181B;
+  color: #FFFFFF;
+  border-color: #27272A;
+}
+
+[data-theme="light"] .btn-primary:hover {
+  background-color: #27272A;
+}
+
+[data-theme="light"] .preset-card:hover {
+  background-color: #F8F9FA;
+}
+
+[data-theme="light"] .preset-card.active-preset {
+  background-color: #F4F4F5;
+  border-color: var(--zinc-400);
+}
+
+[data-theme="light"] .trace-stage.active-stage {
+  background-color: rgba(5, 150, 105, 0.06);
+  border-color: var(--emerald);
+}
+
+[data-theme="light"] .roi-metric-box.highlight-box {
+  background-color: rgba(5, 150, 105, 0.06);
+  border-color: rgba(5, 150, 105, 0.3);
+}
+
+[data-theme="light"] .prob-track {
+  background-color: #E4E4E7;
+}
+
+[data-theme="light"] .code-pane-wrap {
+  background-color: #F8F9FA;
+}
+
+[data-theme="light"] .code-window-header {
+  background-color: #F4F4F5;
+}
+
+[data-theme="light"] .code-tab.active {
+  background-color: #FFFFFF;
+  color: var(--zinc-100);
+  border-color: var(--border-subtle);
+}
+
+[data-theme="light"] .drift-wave-canvas-wrap {
+  background-color: #F8F9FA;
+}
+
+[data-theme="light"] .workspace-table th {
+  background-color: #F4F4F5;
+}
+
+[data-theme="light"] .status-pill.gray {
+  background-color: #E4E4E7;
+  color: var(--zinc-400);
 }
 
 /* Responsive */

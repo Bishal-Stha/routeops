@@ -21,6 +21,7 @@ const CONFIG = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   initViewSwitcher();
   initBackendHealthCheck();
   initPlayground();
@@ -28,6 +29,26 @@ document.addEventListener('DOMContentLoaded', () => {
   initRoiCalculator();
   initDriftWaveSimulator();
 });
+
+/* ================= THEME TOGGLE (LIGHT / DARK) ================= */
+function initTheme() {
+  const toggleBtn = document.getElementById('theme-toggle-btn');
+  const savedTheme = localStorage.getItem('routeops-theme');
+  const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  // Initial theme determination: saved theme -> system preference -> dark default
+  const activeTheme = savedTheme || (systemPrefersDark ? 'dark' : 'dark');
+  document.documentElement.setAttribute('data-theme', activeTheme);
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('routeops-theme', newTheme);
+    });
+  }
+}
 
 /* ================= 1. VIEW SWITCHER ================= */
 function initViewSwitcher() {
