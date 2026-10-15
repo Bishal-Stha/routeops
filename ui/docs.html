@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RouteOps API Specification - Swagger UI</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #09090B;
+      --card: #121215;
+      --border: #27272A;
+      --text: #F4F4F5;
+      --text-muted: #A1A1AA;
+      --emerald: #10B981;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .docs-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+      background: rgba(9, 9, 11, 0.95);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+    .docs-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      background: #18181B;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text);
+    }
+    .docs-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .badge-openapi {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--emerald);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #18181B;
+      border: 1px solid var(--border);
+      color: var(--text);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .back-btn:hover {
+      background: #27272A;
+      color: #FFF;
+    }
+    /* Swagger UI Dark Theme Override */
+    #swagger-ui {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 24px 60px 24px;
+    }
+    .swagger-ui .topbar { display: none !important; }
+    .swagger-ui {
+      color: var(--text) !important;
+    }
+    .swagger-ui .info .title {
+      color: var(--text) !important;
+      font-family: 'Inter', sans-serif !important;
+      font-size: 26px !important;
+      letter-spacing: -0.02em !important;
+    }
+    .swagger-ui .info p, .swagger-ui .info li {
+      color: var(--text-muted) !important;
+      font-size: 14px !important;
+    }
+    .swagger-ui .opblock {
+      background: var(--card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 8px !important;
+      box-shadow: none !important;
+      margin-bottom: 12px !important;
+    }
+    .swagger-ui .opblock .opblock-summary {
+      padding: 10px 14px !important;
+    }
+    .swagger-ui .opblock .opblock-summary-path {
+      color: var(--text) !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 13px !important;
+    }
+    .swagger-ui .opblock .opblock-summary-description {
+      color: var(--text-muted) !important;
+      font-size: 12px !important;
+    }
+    .swagger-ui .opblock-body {
+      background: #0E0F14 !important;
+      border-top: 1px solid var(--border) !important;
+    }
+    .swagger-ui table thead tr th {
+      color: var(--text-muted) !important;
+      border-bottom: 1px solid var(--border) !important;
+    }
+    .swagger-ui table tbody tr td {
+      color: var(--text) !important;
+      border-bottom: 1px solid var(--border) !important;
+    }
+    .swagger-ui .parameter__name {
+      color: var(--text) !important;
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+    .swagger-ui .parameter__type {
+      color: var(--text-muted) !important;
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+    .swagger-ui .btn {
+      border-radius: 6px !important;
+      font-family: 'Inter', sans-serif !important;
+    }
+    .swagger-ui .btn.execute {
+      background-color: #27272A !important;
+      border-color: #3F3F46 !important;
+      color: #FFF !important;
+    }
+    .swagger-ui .response-col_status {
+      color: var(--emerald) !important;
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+    .swagger-ui pre {
+      background: #09090B !important;
+      color: var(--text) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 6px !important;
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+    .swagger-ui .model-box {
+      background: #0E0F14 !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="docs-topbar">
+    <a href="/" class="docs-brand">
+      <div class="brand-logo">RO</div>
+      <span class="docs-title">RouteOps Gateway Specification</span>
+      <span class="badge-openapi">OpenAPI 3.1.0</span>
+    </a>
+    <a href="/" class="back-btn">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Back to Triage Playground
+    </a>
+  </header>
+
+  <!-- Swagger UI Mount Container -->
+  <div id="swagger-ui"></div>
+
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    window.onload = function() {
+      SwaggerUIBundle({
+        url: "./openapi.json",
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIBundle.SwaggerUIStandalonePreset
+        ],
+        layout: "BaseLayout"
+      });
+    };
+  </script>
+</body>
+</html>
