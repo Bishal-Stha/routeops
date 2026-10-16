@@ -1043,6 +1043,7 @@ textarea:focus, select:focus {
   line-height: 1.6;
   color: var(--zinc-300);
   overflow-x: auto;
+  white-space: pre;
 }
 
 .code-block.active {

@@ -109,6 +109,10 @@ class RouteRequest(BaseModel):
         default=False,
         description="If True, throws HTTP 403 Forbidden when guardrails are triggered",
     )
+    use_cache: bool = Field(
+        default=True,
+        description="Whether to evaluate semantic cache",
+    )
 
 
 class HealthResponse(BaseModel):
@@ -143,6 +147,7 @@ async def route_query_endpoint(request: RouteRequest) -> RouteDecision:
     decision = router.route_query(
         query=request.query,
         language_hint=request.language_hint,
+        enable_cache=request.use_cache,
     )
 
     # Record telemetry into drift monitor and Prometheus
@@ -183,6 +188,7 @@ async def route_query_stream_endpoint(request: RouteRequest) -> StreamingRespons
     decision = router.route_query(
         query=request.query,
         language_hint=request.language_hint,
+        enable_cache=request.use_cache,
     )
 
     # Record telemetry into drift monitor and Prometheus

@@ -218,6 +218,19 @@ function clearDecisionInspector() {
   if (expl) expl.textContent = 'Please enter a valid query or select a preset to evaluate.';
   if (ansBox) ansBox.innerHTML = '<p style="color: var(--text-muted);">No query evaluated.</p>';
   if (jsonPre) jsonPre.textContent = '{\n  "status": "awaiting_input"\n}';
+
+  // Nit 5: Reset receipt tier and all cost economics to zero placeholder
+  const roCost = document.getElementById('receipt-routeops-cost');
+  const frCost = document.getElementById('receipt-frontier-cost');
+  const netSaved = document.getElementById('receipt-net-saved');
+  const pctSaved = document.getElementById('receipt-savings-pct');
+  const rateLabel = document.getElementById('receipt-rate-label');
+
+  if (roCost) roCost.textContent = '$0.000000';
+  if (frCost) frCost.textContent = '$0.000000';
+  if (netSaved) netSaved.textContent = '+$0.000000';
+  if (pctSaved) pctSaved.textContent = '0.0% Saved';
+  if (rateLabel) rateLabel.textContent = 'Tier: — (Awaiting Query)';
 }
 
 function setPipelineStageActive(stageName) {
@@ -269,8 +282,9 @@ async function executeRoutingTriage(query, langHint, useCache) {
     const cached = CONFIG.cacheStore.get(cleanNorm);
     setPipelineStageActive('execution');
     const origConfPct = ((cached.confidence || 0.98) * 100).toFixed(1);
+    const cHash = computeStringHash(cleanNorm);
     renderDecisionOutput({
-      request_id: "ro-cache-" + Math.random().toString(36).substring(2, 8),
+      request_id: "ro-cache-" + cHash.toString(36).substring(0, 8),
       query: query,
       redacted_query: piiResult.redacted,
       pii_detected: piiResult.detected,
@@ -357,31 +371,47 @@ function detectAndRedactPII(text) {
   return { original: text, redacted, detected };
 }
 
+function computeStringHash(str) {
+  let h1 = 0xdeadbeef, h2 = 0x41c64e6d;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+}
+
 function evaluateClientSideRouting(query, piiResult, langHint) {
   const lower = query.toLowerCase().trim();
   const words = lower.split(/\s+/).filter(Boolean);
   const tStart = performance.now();
 
-  // Bug 2: Gibberish & OOV Abstention Gate
+  // Deterministic ID from string hash
+  const strHash = computeStringHash(lower);
+  const reqId = "ro-edge-" + (strHash.toString(36).substring(0, 8));
+
+  // Bug 2 & Nit 2: Gibberish & OOV Abstention Gate
   const gibberishPatterns = ["asdf", "qwer", "zzzz", "hjkl", "zxcv", "asdfgh", "qwerty"];
   const isKeyboardMash = gibberishPatterns.some(pat => lower.includes(pat));
   const hasLowVowelRatio = words.length > 0 && words.every(w => w.length <= 6 && !/[aeiou]/i.test(w));
 
   if (isKeyboardMash || hasLowVowelRatio) {
-    const flatLatency = Number((8.5 + (query.length * 0.05)).toFixed(1));
+    const flatLatency = 8.5;
     return {
-      request_id: "ro-edge-" + Math.random().toString(36).substring(2, 9),
+      request_id: reqId,
       query: query,
       redacted_query: piiResult.redacted,
       pii_detected: piiResult.detected,
       predicted_class: "low_conf_fallback",
       routed_class: "low_conf_fallback",
-      confidence: 0.384,
+      confidence: 0.3840,
       probabilities: {
-        direct_response: 0.384,
-        rag_retrieval: 0.258,
-        frontier_reasoning: 0.218,
-        guardrail_blocked: 0.140
+        direct_response: 0.3840,
+        rag_retrieval: 0.2580,
+        frontier_reasoning: 0.2180,
+        guardrail_blocked: 0.1400
       },
       routed_tier: "low_conf_fallback",
       is_guardrail_triggered: false,
@@ -395,10 +425,33 @@ function evaluateClientSideRouting(query, piiResult, langHint) {
   }
 
   // Real Subword / N-gram Logit Scoring + Temperature Calibration
-  const guardTerms = ['ignore previous', 'jailbreak', 'dan mode', 'unfiltered', 'system prompt', 'api key', 'password', 'hack', 'root password'];
-  const directTerms = ['hello', 'hi', 'good morning', 'good evening', 'how are you', 'thank you', 'thanks', 'what is your name', 'namaste', 'sanchai', 'store hours', 'opening time', 'customer support'];
-  const ragTerms = ['bank', 'account', 'balance', 'nagrikta', 'नागरिकता', 'राहदानी', 'पासपोर्ट', 'khata', 'kagajat', 'byaj', 'deposit', 'loan', 'bida', 'chha'];
-  const frontierTerms = ['quantum', 'entanglement', 'hilbert', 'algorithm', 'asyncio', 'mathematically', 'raft consensus', 'cuda', 'differential', 'eigenvalue', 'complexity', 'kkt'];
+  const guardTerms = [
+    'ignore previous', 'ignore all', 'system prompt', 'jailbreak', 'dan mode',
+    'unfiltered', 'override', 'malware', 'ddos', 'hack', 'phishing', 'birsinus',
+    'nirdeshan', 'secret key', 'password', 'drop database', 'injection', 'bypass',
+    'exploit', 'root password', 'api key'
+  ];
+  const directTerms = [
+    'hello', 'hi', 'my', 'name', 'is', 'how', 'are', 'you', 'the', 'what', 'who', 'where',
+    'good morning', 'good evening', 'good afternoon', 'good', 'morning', 'how are you',
+    'thank you', 'thanks', 'what is your name', 'namaste', 'namaskar', 'sanchai',
+    'sanchai chha', 'sanchai cha', 'mero', 'naam', 'ho', 'ma', 'timro', 'tapai', 'hajur',
+    'kasto', 'cha', 'chha', 'thik', 'dhanyabad', 'dhanyavad', 'k', 'gardai', 'kata', 'bata',
+    'bye', 'see you', 'nice to meet you', 'store hours', 'opening time', 'operating hours',
+    'customer support', 'store open', 'open on', 'store', 'hours', 'नमस्ते', 'धन्यवाद', 'मेरो', 'नाम', 'हो'
+  ];
+  const ragTerms = [
+    'bank', 'khata', 'account', 'deposit', 'loan', 'interest', 'passport', 'license',
+    'nagrikta', 'nagarik', 'tax', 'esewa', 'khalti', 'connectips', 'nepse', 'share',
+    'byaj', 'kagajat', 'pan', 'citizenship', 'invoice', 'statement', 'balance',
+    'नागरिकता', 'राहदानी', 'ब्यालेन्स', 'मुद्दती', 'bida'
+  ];
+  const frontierTerms = [
+    'python', 'code', 'algorithm', 'differential', 'equation', 'proof', 'prove',
+    'cuda', 'asyncio', 'microservices', 'rust', 'kkt', 'complexity', 'gradient',
+    'attention', 'transformer', 'math', 'derive', 'optimize', 'quantum', 'entanglement',
+    'hilbert', 'mathematically', 'raft consensus', 'eigenvalue'
+  ];
 
   let logits = [-0.5, -0.5, -0.5, -2.5]; // [direct, rag, frontier, guard]
   let is_guardrail = false;
@@ -420,19 +473,19 @@ function evaluateClientSideRouting(query, piiResult, langHint) {
     const frontierScore = frontierTerms.filter(t => lower.includes(t)).length * 2.5 + (words.length > 20 ? 1.5 : 0);
 
     if (directScore >= ragScore && directScore >= frontierScore && directScore > 0) {
-      logits = [2.8 + Math.min(1.5, directScore * 0.3), -0.5, -0.8, -3.0];
+      logits = [2.9 + Math.min(2.0, directScore * 0.4), -0.5, -0.8, -3.0];
       routed_class = 'direct_response';
       routed_tier = 'slm_fast_tier';
       response_text = "Namaste! Welcome to RouteOps customer portal. Our digital banking services, card management, and automated support operate 24/7.";
       cost_per_1k = 0.00015;
     } else if (ragScore >= directScore && ragScore >= frontierScore && ragScore > 0) {
-      logits = [-0.6, 2.9 + Math.min(1.5, ragScore * 0.3), -0.5, -3.0];
+      logits = [-0.6, 3.0 + Math.min(2.0, ragScore * 0.4), -0.5, -3.0];
       routed_class = 'rag_retrieval';
       routed_tier = 'rag_account_tier';
       response_text = "खाताको ब्यालेन्स जाँच गर्न वा विवरण हेर्न: मोबाइल बैंकिङ एपमा आफ्नो फोन नम्बर र पिन प्रयोग गरी लगइन गर्नुहोस्। आवश्यक परे नजिकको शाखा वा एटीएमबाट 'Balance Inquiry' रोज्न सक्नुहुन्छ।";
       cost_per_1k = 0.000300;
     } else if (frontierScore > 0) {
-      logits = [-0.8, -0.5, 2.9 + Math.min(1.5, frontierScore * 0.3), -3.0];
+      logits = [-0.8, -0.5, 3.0 + Math.min(2.0, frontierScore * 0.4), -3.0];
       routed_class = 'frontier_reasoning';
       routed_tier = 'frontier_reasoning_tier';
       response_text = "Quantum entanglement involves composite quantum states in a tensor product Hilbert space H_A ⊗ H_B that cannot be factored as |ψ⟩ = |ψ_A⟩ ⊗ |ψ_B⟩. Projective measurement collapses the joint state non-locally.";
@@ -446,17 +499,12 @@ function evaluateClientSideRouting(query, piiResult, langHint) {
     }
   }
 
-  // Continuous Subword N-Gram Perturbation (unique per input string!)
-  let hash = 0;
-  for (let i = 0; i < lower.length; i++) {
-    hash = ((hash << 5) - hash) + lower.charCodeAt(i);
-    hash |= 0;
-  }
+  // Strictly deterministic perturbation via FNV-1a / integer math
   const pert = [
-    ((Math.abs(hash) % 50) - 25) / 250.0,
-    ((Math.abs(hash >> 3) % 50) - 25) / 250.0,
-    ((Math.abs(hash >> 6) % 50) - 25) / 250.0,
-    ((Math.abs(hash >> 9) % 50) - 25) / 250.0
+    (((strHash % 100) - 50) / 400.0),
+    ((((strHash >>> 8) % 100) - 50) / 400.0),
+    ((((strHash >>> 16) % 100) - 50) / 400.0),
+    ((((strHash >>> 24) % 100) - 50) / 400.0)
   ];
   const finalLogits = logits.map((l, i) => l + pert[i]);
 
@@ -474,12 +522,12 @@ function evaluateClientSideRouting(query, piiResult, langHint) {
   };
 
   const confidence = Number((probMap[routed_class] || 0.94).toFixed(4));
-  const dynamicLatency = Number(Math.max(4.2, (performance.now() - tStart) + (query.length * 0.08) + 6.2).toFixed(1));
+  const dynamicLatency = 6.8;
   const naive_cost = 0.003000;
   const cost_saved = Math.max(0, naive_cost - cost_per_1k);
 
   return {
-    request_id: "ro-edge-" + Math.random().toString(36).substring(2, 9),
+    request_id: reqId,
     query: query,
     redacted_query: piiResult.redacted,
     pii_detected: piiResult.detected,
