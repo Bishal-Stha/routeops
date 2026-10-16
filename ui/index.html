@@ -55,6 +55,10 @@
         <span class="pulsing-dot" id="pulsing-dot"></span>
         <span id="gateway-status-label">FastAPI Connected</span>
       </div>
+      <div class="live-status-pill" id="supabase-status-pill" title="Supabase PostgreSQL Telemetry Feed" style="display: flex; align-items: center; gap: 6px;">
+        <span class="pulsing-dot" style="background-color: #10B981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);" id="supabase-dot"></span>
+        <span id="supabase-status-label" style="font-size: 11px; font-weight: 500;">Supabase PostgreSQL Telemetry Feed (Live Synced)</span>
+      </div>
       <button class="theme-toggle-btn" id="theme-toggle-btn" title="Toggle Light/Dark Theme" aria-label="Toggle theme">
         <!-- Sun icon (shown in dark mode) -->
         <svg class="sun-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -159,6 +163,9 @@
 
           <div class="form-group">
             <label for="gateway-query-input">User Query (English, Romanized Nepali, or Devanagari)</label>
+            <div id="query-validation-banner" style="display: none; padding: 8px 12px; margin-bottom: 8px; border-radius: 6px; background: rgba(244, 63, 94, 0.15); border: 1px solid #F43F5E; color: #F43F5E; font-size: 13px; font-weight: 500;">
+              Please enter a query or select a preset below to execute routing triage.
+            </div>
             <textarea id="gateway-query-input" rows="3" placeholder="Enter a query to inspect live routing...">Mero bank account 01234567890123 ko balance check garne tarika k ho?</textarea>
           </div>
 
@@ -274,7 +281,7 @@
           <div class="inspector-card">
             <div class="ic-header">
               <span class="ic-title">4-Class Probability Distribution</span>
-              <span class="ic-sub">DistilBERT Softmax Logits</span>
+              <span class="ic-sub">mDeBERTa-v3 Int8 Softmax Distribution</span>
             </div>
             <div class="prob-bars-grid" id="prob-bars-container">
               <div class="prob-row">

@@ -1,0 +1,6 @@
+fastapi>=0.110.0
+pydantic>=2.6.0
+pyyaml>=6.0.1
+numpy>=1.26.0
+prometheus-client>=0.20.0
+psutil>=5.9.8

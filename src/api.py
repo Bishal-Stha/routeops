@@ -120,6 +120,7 @@ class HealthResponse(BaseModel):
     quantized_mode: bool
     total_queries_served: int
     vram_budget_mb: int
+    supabase_connected: bool = True
 
 
 # -----------------------------------------------------------------------------
@@ -299,7 +300,19 @@ async def health_check() -> HealthResponse:
         quantized_mode=router.use_quantized,
         total_queries_served=total_queries,
         vram_budget_mb=_config.hardware.vram_budget_mb,
+        supabase_connected=bool(router.telemetry.supabase_url and router.telemetry.supabase_key and "placeholder" not in router.telemetry.supabase_key),
     )
+
+
+@app.get(
+    "/v1/telemetry",
+    status_code=status.HTTP_200_OK,
+    summary="Inspect aggregated telemetry and cost economics",
+)
+async def get_telemetry_summary():
+    """Retrieve aggregate telemetry and cost metrics."""
+    router = get_router_service()
+    return router.telemetry.get_summary_stats()
 
 
 @app.get(

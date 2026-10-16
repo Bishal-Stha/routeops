@@ -2,18 +2,38 @@
   "version": 2,
   "builds": [
     {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    },
+    {
       "src": "ui/**/*",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
+      "src": "/v1/(.*)",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/health",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/metrics",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/v1/drift",
+      "dest": "api/index.py"
+    },
+    {
       "src": "/docs",
-      "dest": "/ui/docs.html"
+      "dest": "api/index.py"
     },
     {
       "src": "/openapi.json",
-      "dest": "/ui/openapi.json"
+      "dest": "api/index.py"
     },
     {
       "src": "/(.*)",

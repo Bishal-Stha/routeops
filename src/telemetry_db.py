@@ -32,8 +32,16 @@ class TelemetryDB:
         Args:
             db_path: Path to SQLite database file.
         """
-        self.db_path = Path(db_path)
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        if os.getenv("VERCEL"):
+            self.db_path = Path("/tmp/routeops_telemetry.db")
+        else:
+            self.db_path = Path(db_path)
+        try:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            self.db_path = Path("/tmp/routeops_telemetry.db")
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+
         self._lock = threading.Lock()
         self.supabase_url = os.getenv("SUPABASE_URL", "").rstrip("/")
         self.supabase_key = (
@@ -45,10 +53,16 @@ class TelemetryDB:
 
     def _get_connection(self) -> sqlite3.Connection:
         """Create a connection with optimized PRAGMA settings."""
-        conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
+        db_p = self.db_path
+        if os.getenv("VERCEL") and "data" in str(db_p):
+            db_p = Path("/tmp/routeops_telemetry.db")
+        conn = sqlite3.connect(str(db_p), check_same_thread=False)
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode = WAL;")
-        conn.execute("PRAGMA synchronous = NORMAL;")
+        try:
+            conn.execute("PRAGMA journal_mode = WAL;")
+            conn.execute("PRAGMA synchronous = NORMAL;")
+        except Exception:
+            pass
         return conn
 
     def _init_schema(self) -> None:
@@ -87,6 +101,7 @@ class TelemetryDB:
                     predicted_class TEXT NOT NULL,
                     embedding_json TEXT NOT NULL,
                     response_text TEXT NOT NULL,
+                    probabilities_json TEXT DEFAULT "{}",
                     hit_count INTEGER DEFAULT 1,
                     created_at REAL NOT NULL
                 );
@@ -95,6 +110,10 @@ class TelemetryDB:
                 CREATE INDEX IF NOT EXISTS idx_cache_class
                 ON semantic_cache(predicted_class);
                 """)
+            try:
+                conn.execute("ALTER TABLE semantic_cache ADD COLUMN probabilities_json TEXT DEFAULT '{}';")
+            except Exception:
+                pass
             conn.commit()
             logger.info("Initialized telemetry database schema at %s", self.db_path)
 
@@ -211,7 +230,7 @@ class TelemetryDB:
         predicted_class: str,
         query_text: Optional[str] = None,
         similarity_threshold: float = 0.92,
-    ) -> Optional[Tuple[str, str, float]]:
+    ) -> Optional[Tuple[str, str, float, str]]:
         """Search the cache for semantic hits within the same predicted class.
 
         Args:
@@ -221,7 +240,7 @@ class TelemetryDB:
             similarity_threshold: Minimum cosine similarity required (default: 0.92).
 
         Returns:
-            Tuple of (response_text, cached_query_text, similarity_score) if hit, else None.
+            Tuple of (response_text, cached_query_text, similarity_score, probabilities_json) if hit, else None.
         """
         # Fast-Path: Check exact hash match
         if query_text:
@@ -229,7 +248,7 @@ class TelemetryDB:
             with self._lock, self._get_connection() as conn:
                 cur = conn.execute(
                     """
-                    SELECT query_hash, query_text, response_text
+                    SELECT query_hash, query_text, response_text, probabilities_json
                     FROM semantic_cache
                     WHERE query_hash = ? AND predicted_class = ?;
                     """,
@@ -246,13 +265,13 @@ class TelemetryDB:
                         (q_hash,),
                     )
                     conn.commit()
-                    return row["response_text"], row["query_text"], 1.0
+                    return row["response_text"], row["query_text"], 1.0, row["probabilities_json"] or "{}"
 
         # Vector Scan Path: Compare against candidates in the same class
         with self._lock, self._get_connection() as conn:
             cur = conn.execute(
                 """
-                SELECT query_hash, query_text, embedding_json, response_text
+                SELECT query_hash, query_text, embedding_json, response_text, probabilities_json
                 FROM semantic_cache
                 WHERE predicted_class = ?;
                 """,
@@ -300,7 +319,7 @@ class TelemetryDB:
                     (best_row["query_hash"],),
                 )
                 conn.commit()
-            return best_row["response_text"], best_row["query_text"], float(best_sim)
+            return best_row["response_text"], best_row["query_text"], float(best_sim), best_row["probabilities_json"] or "{}"
 
         return None
 
@@ -310,6 +329,7 @@ class TelemetryDB:
         predicted_class: str,
         embedding: np.ndarray,
         response_text: str,
+        probabilities: Optional[Dict[str, float]] = None,
     ) -> None:
         """Store a verified query-response pair in the semantic cache.
 
@@ -318,6 +338,7 @@ class TelemetryDB:
             predicted_class: Canonical intent category.
             embedding: Dense vector representation (will be normalized).
             response_text: Generated/retrieved response content.
+            probabilities: 4-class probability distribution dictionary.
         """
         q_hash = self.compute_query_hash(query_text)
         vec = np.asarray(embedding, dtype=np.float32).flatten()
@@ -325,6 +346,7 @@ class TelemetryDB:
         if norm > 1e-8:
             vec = vec / norm
         embedding_json = json.dumps(vec.tolist())
+        probabilities_json = json.dumps(probabilities or {})
         created_at = time.time()
 
         with self._lock, self._get_connection() as conn:
@@ -332,10 +354,11 @@ class TelemetryDB:
                 """
                 INSERT INTO semantic_cache (
                     query_hash, query_text, predicted_class,
-                    embedding_json, response_text, hit_count, created_at
-                ) VALUES (?, ?, ?, ?, ?, 1, ?)
+                    embedding_json, response_text, probabilities_json, hit_count, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, 1, ?)
                 ON CONFLICT(query_hash) DO UPDATE SET
                     response_text = excluded.response_text,
+                    probabilities_json = excluded.probabilities_json,
                     hit_count = hit_count + 1;
                 """,
                 (
@@ -344,6 +367,7 @@ class TelemetryDB:
                     predicted_class,
                     embedding_json,
                     response_text,
+                    probabilities_json,
                     created_at,
                 ),
             )
