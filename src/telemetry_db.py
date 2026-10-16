@@ -169,10 +169,12 @@ class TelemetryDB:
 
         # Asynchronous Supabase REST push (if configured)
         if self.supabase_url and self.supabase_key:
+            import datetime
+            iso_ts = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc).isoformat()
             self._async_log_supabase(
                 {
                     "request_id": request_id,
-                    "created_at": ts,
+                    "created_at": iso_ts,
                     "query_text": query_text,
                     "detected_lang": detected_lang,
                     "predicted_class": predicted_class,
