@@ -17,19 +17,28 @@
       --text-muted: #A1A1AA;
       --emerald: #10B981;
     }
+    [data-theme="light"] {
+      --bg: #FAFAFA;
+      --card: #FFFFFF;
+      --border: #E4E4E7;
+      --text: #09090B;
+      --text-muted: #71717A;
+      --emerald: #059669;
+    }
     body {
       margin: 0;
       padding: 0;
       background: var(--bg);
       color: var(--text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      transition: background 0.2s ease, color 0.2s ease;
     }
     .docs-topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 12px 24px;
-      background: rgba(9, 9, 11, 0.95);
+      background: var(--bg);
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
@@ -46,7 +55,7 @@
     .brand-logo {
       width: 28px;
       height: 28px;
-      background: #18181B;
+      background: var(--card);
       border: 1px solid var(--border);
       border-radius: 6px;
       display: flex;
@@ -72,11 +81,37 @@
       border-radius: 4px;
       font-weight: 600;
     }
+    .docs-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .theme-toggle-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .theme-toggle-btn:hover {
+      border-color: var(--emerald);
+    }
+    .theme-toggle-btn .sun-icon { display: block; }
+    .theme-toggle-btn .moon-icon { display: none; }
+    [data-theme="light"] .theme-toggle-btn .sun-icon { display: none; }
+    [data-theme="light"] .theme-toggle-btn .moon-icon { display: block; }
+
     .back-btn {
       display: flex;
       align-items: center;
       gap: 6px;
-      background: #18181B;
+      background: var(--card);
       border: 1px solid var(--border);
       color: var(--text);
       text-decoration: none;
@@ -87,10 +122,9 @@
       transition: all 0.15s ease;
     }
     .back-btn:hover {
-      background: #27272A;
-      color: #FFF;
+      border-color: var(--emerald);
     }
-    /* Swagger UI Dark Theme Override */
+    /* Swagger UI Theme Overrides */
     #swagger-ui {
       max-width: 1200px;
       margin: 0 auto;
@@ -106,7 +140,7 @@
       font-size: 26px !important;
       letter-spacing: -0.02em !important;
     }
-    .swagger-ui .info p, .swagger-ui .info li {
+    .swagger-ui .info p, .swagger-ui .info li, .swagger-ui .info table {
       color: var(--text-muted) !important;
       font-size: 14px !important;
     }
@@ -130,7 +164,7 @@
       font-size: 12px !important;
     }
     .swagger-ui .opblock-body {
-      background: #0E0F14 !important;
+      background: var(--bg) !important;
       border-top: 1px solid var(--border) !important;
     }
     .swagger-ui table thead tr th {
@@ -154,23 +188,29 @@
       font-family: 'Inter', sans-serif !important;
     }
     .swagger-ui .btn.execute {
-      background-color: #27272A !important;
-      border-color: #3F3F46 !important;
-      color: #FFF !important;
+      background-color: var(--card) !important;
+      border-color: var(--border) !important;
+      color: var(--text) !important;
     }
     .swagger-ui .response-col_status {
       color: var(--emerald) !important;
       font-family: 'JetBrains Mono', monospace !important;
     }
     .swagger-ui pre {
-      background: #09090B !important;
+      background: var(--bg) !important;
       color: var(--text) !important;
       border: 1px solid var(--border) !important;
       border-radius: 6px !important;
       font-family: 'JetBrains Mono', monospace !important;
     }
     .swagger-ui .model-box {
-      background: #0E0F14 !important;
+      background: var(--card) !important;
+    }
+    .swagger-ui .scheme-container {
+      background: var(--card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 8px;
+      box-shadow: none !important;
     }
   </style>
 </head>
@@ -183,10 +223,30 @@
       <span class="docs-title">RouteOps Gateway Specification</span>
       <span class="badge-openapi">OpenAPI 3.1.0</span>
     </a>
-    <a href="/" class="back-btn">
-      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-      Back to Triage Playground
-    </a>
+    <div class="docs-actions">
+      <button class="theme-toggle-btn" id="theme-toggle-btn" title="Toggle Light/Dark Theme" aria-label="Toggle theme">
+        <!-- Sun icon -->
+        <svg class="sun-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <!-- Moon icon -->
+        <svg class="moon-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <a href="/" class="back-btn">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back to Triage Playground
+      </a>
+    </div>
   </header>
 
   <!-- Swagger UI Mount Container -->
@@ -194,6 +254,20 @@
 
   <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
   <script>
+    // Initialize theme on load from localStorage
+    const savedTheme = localStorage.getItem('routeops-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    const toggleBtn = document.getElementById('theme-toggle-btn');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('routeops-theme', next);
+      });
+    }
+
     window.onload = function() {
       SwaggerUIBundle({
         url: "./openapi.json",
