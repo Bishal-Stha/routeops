@@ -89,6 +89,16 @@ async function initBackendHealthCheck() {
       if (supabaseLabel) {
         supabaseLabel.textContent = 'Supabase PostgreSQL Telemetry Feed (Live Synced)';
       }
+
+      // Fetch client public telemetry credentials securely from gateway
+      try {
+        const cfgRes = await fetch(`${CONFIG.apiBaseUrl}/v1/telemetry/config`);
+        if (cfgRes.ok) {
+          const cfg = await cfgRes.json();
+          if (cfg.supabase_url) CONFIG.supabaseUrl = cfg.supabase_url;
+          if (cfg.supabase_anon_key) CONFIG.supabaseAnonKey = cfg.supabase_anon_key;
+        }
+      } catch (_) {}
       return;
     }
   } catch (err) {

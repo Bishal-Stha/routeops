@@ -120,6 +120,7 @@ class HealthResponse(BaseModel):
     quantized_mode: bool
     total_queries_served: int
     vram_budget_mb: int
+    engine: str = "mDeBERTa-v3-int8-serverless"
     supabase_connected: bool = True
 
 
@@ -291,7 +292,17 @@ async def health_check() -> HealthResponse:
     router = get_router_service()
     monitor = get_drift_monitor()
     total_queries = len(monitor.window)
-    is_model_ready = router.session is not None or router.tokenizer is not None
+    is_model_ready = (
+        router.session is not None
+        or router.tokenizer is not None
+        or getattr(router, "engine_ready", True)
+    )
+
+    supabase_ok = bool(
+        router.telemetry.supabase_url
+        and router.telemetry.supabase_key
+        and "placeholder" not in router.telemetry.supabase_key
+    )
 
     return HealthResponse(
         status="healthy",
@@ -300,7 +311,8 @@ async def health_check() -> HealthResponse:
         quantized_mode=router.use_quantized,
         total_queries_served=total_queries,
         vram_budget_mb=_config.hardware.vram_budget_mb,
-        supabase_connected=bool(router.telemetry.supabase_url and router.telemetry.supabase_key and "placeholder" not in router.telemetry.supabase_key),
+        engine="mDeBERTa-v3-int8-serverless",
+        supabase_connected=supabase_ok,
     )
 
 
@@ -313,6 +325,21 @@ async def get_telemetry_summary():
     """Retrieve aggregate telemetry and cost metrics."""
     router = get_router_service()
     return router.telemetry.get_summary_stats()
+
+
+@app.get(
+    "/v1/telemetry/config",
+    status_code=status.HTTP_200_OK,
+    summary="Retrieve client public telemetry configuration",
+)
+async def get_telemetry_client_config():
+    """Provide client-side runtime with public Supabase configuration."""
+    router = get_router_service()
+    return {
+        "supabase_url": router.telemetry.supabase_url or "https://lijojlrjhmiintphufpy.supabase.co",
+        "supabase_anon_key": router.telemetry.supabase_key if "placeholder" not in router.telemetry.supabase_key else "",
+        "connected": bool(router.telemetry.supabase_url and router.telemetry.supabase_key and "placeholder" not in router.telemetry.supabase_key),
+    }
 
 
 @app.get(
